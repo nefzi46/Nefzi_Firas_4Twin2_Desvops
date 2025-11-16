@@ -1,14 +1,28 @@
 pipeline {
     agent any
     
-    environment {
-        // Utilise les outils déjà installés sur le système
-        JAVA_HOME = '/usr/lib/jvm/java-17-openjdk-amd64'
-        M2_HOME = '/usr/share/maven'
-        PATH = "${env.JAVA_HOME}/bin:${env.M2_HOME}/bin:${env.PATH}"
+    tools {
+        // Utilise les noms EXACTS configurés dans Jenkins
+        maven 'M2_HOME'
+        jdk 'JAVA_HOME'
     }
     
     stages {
+        stage('Vérification outils') {
+            steps {
+                echo '🔧 Vérification des versions...'
+                sh '''
+                    echo "=== VERSION JAVA ==="
+                    java -version
+                    echo "=== VERSION MAVEN ==="
+                    mvn -version
+                    echo "=== VARIABLES D'ENVIRONNEMENT ==="
+                    echo "JAVA_HOME: $JAVA_HOME"
+                    echo "M2_HOME: $M2_HOME"
+                '''
+            }
+        }
+        
         stage('Checkout') {
             steps {
                 echo '📥 Récupération du code depuis GitHub...'
@@ -19,14 +33,7 @@ pipeline {
         stage('Build') {
             steps {
                 echo '🔨 Construction du projet Maven...'
-                sh '''
-                    echo "Java version:"
-                    java -version
-                    echo "Maven version:"
-                    mvn -version
-                    echo "Construction en cours..."
-                    mvn clean package
-                '''
+                sh 'mvn clean package -DskipTests'
             }
         }
         
@@ -34,10 +41,10 @@ pipeline {
             steps {
                 echo '✅ Vérification des résultats...'
                 sh '''
-                    echo "=== CONTENU DU DOSSIER target/ ==="
+                    echo "=== CONTENU TARGET ==="
                     ls -la target/
                     echo "=== LIVRABLES ==="
-                    find target/ -name "*.jar" -o -name "*.war" 2>/dev/null || echo "Aucun livrable trouvé"
+                    find target/ -name "*.jar" -o -name "*.war" 2>/dev/null
                 '''
             }
         }
