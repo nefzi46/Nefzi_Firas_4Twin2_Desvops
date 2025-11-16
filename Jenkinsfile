@@ -1,33 +1,42 @@
 pipeline {
     agent any
     
-    tools {
-        maven 'M2_HOME'
-        jdk 'JAVA_HOME'
+    environment {
+        // Utilise les outils déjà installés sur le système
+        JAVA_HOME = '/usr/lib/jvm/java-17-openjdk-amd64'
+        M2_HOME = '/usr/share/maven'
+        PATH = "${env.JAVA_HOME}/bin:${env.M2_HOME}/bin:${env.PATH}"
     }
     
     stages {
-        stage('Checkout Code') {
+        stage('Checkout') {
             steps {
                 echo '📥 Récupération du code depuis GitHub...'
                 checkout scm
             }
         }
         
-        stage('Build Maven') {
+        stage('Build') {
             steps {
                 echo '🔨 Construction du projet Maven...'
-                sh 'mvn clean package'
+                sh '''
+                    echo "Java version:"
+                    java -version
+                    echo "Maven version:"
+                    mvn -version
+                    echo "Construction en cours..."
+                    mvn clean package
+                '''
             }
         }
         
-        stage('Verify Results') {
+        stage('Results') {
             steps {
-                echo '✅ Vérification du livrable...'
+                echo '✅ Vérification des résultats...'
                 sh '''
-                    echo "=== FICHIERS GÉNÉRÉS ==="
+                    echo "=== CONTENU DU DOSSIER target/ ==="
                     ls -la target/
-                    echo "=== LIVRABLES TROUVÉS ==="
+                    echo "=== LIVRABLES ==="
                     find target/ -name "*.jar" -o -name "*.war" 2>/dev/null || echo "Aucun livrable trouvé"
                 '''
             }
@@ -39,11 +48,11 @@ pipeline {
             echo '🏁 Pipeline terminé'
         }
         success {
-            echo '🎉 SUCCÈS: Construction réussie!'
+            echo '🎉 SUCCÈS! Construction réussie!'
             archiveArtifacts 'target/*.jar,target/*.war'
         }
         failure {
-            echo '❌ ÉCHEC: La construction a échoué'
+            echo '❌ ÉCHEC de la construction'
         }
     }
 }
