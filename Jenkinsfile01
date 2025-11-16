@@ -1,0 +1,65 @@
+pipeline {
+    agent any
+    
+    environment {
+        // Utilise les chemins ABSOLUS de votre système
+        JAVA_HOME = '/usr/lib/jvm/java-17-openjdk-amd64'
+        M2_HOME = '/usr/share/maven'
+        PATH = "${env.JAVA_HOME}/bin:${env.M2_HOME}/bin:${env.PATH}"
+    }
+    
+    stages {
+        stage('Vérification Outils') {
+            steps {
+                echo '🔧 Vérification des outils système...'
+                sh '''
+                    echo "=== VERSIONS INSTALLÉES ==="
+                    echo "Java:"
+                    java -version
+                    echo "Maven:"
+                    mvn -version
+                    echo "=== CHEMINS ==="
+                    which java
+                    which mvn
+                '''
+            }
+        }
+        
+        stage('Checkout') {
+            steps {
+                echo '📥 Récupération du code...'
+                checkout scm
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                echo '🔨 Construction Maven...'
+                sh 'mvn clean package -DskipTests'
+            }
+        }
+        
+        stage('Résultats') {
+            steps {
+                echo '✅ Vérification du livrable...'
+                sh '''
+                    echo "Fichiers générés:"
+                    ls -la target/*.jar 2>/dev/null || echo "Aucun fichier JAR trouvé"
+                '''
+            }
+        }
+    }
+    
+    post {
+        always {
+            echo '🏁 Pipeline terminé'
+        }
+        success {
+            echo '🎉 SUCCÈS!'
+            archiveArtifacts 'target/*.jar, target/*.war'
+        }
+        failure {
+            echo '❌ ÉCHEC'
+        }
+    }
+}
