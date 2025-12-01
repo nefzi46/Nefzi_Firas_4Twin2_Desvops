@@ -1,29 +1,17 @@
 pipeline {
-    agent any     // on laisse Jenkins choisir (le master Windows)
+    agent any
 
     stages {
-        stage('Build JAR') {
-            steps {
-                bat 'mvn clean package -DskipTests'
-            }
-        }
-
         stage('Build & Push Docker Image') {
             steps {
-                script {
-                    def image = docker.build("nezras24/nefzi-firas-app:${env.BUILD_NUMBER}")
-                    docker.withRegistry('', 'dockerhub-nezras24') {
-                        image.push()
-                        image.push('latest')
-                    }
-                }
+                powershell '''
+                    docker build -t nezras24/nefzi-firas-app:${BUILD_NUMBER} .
+                    docker tag nezras24/nefzi-firas-app:${BUILD_NUMBER} nezras24/nefzi-firas-app:latest
+                    docker push nezras24/nefzi-firas-app:${BUILD_NUMBER}
+                    docker push nezras24/nefzi-firas-app:latest
+                '''
             }
-        }
-    }
-
-    post {
-        always {
-            bat 'docker logout || ver > nul'
         }
     }
 }
+
