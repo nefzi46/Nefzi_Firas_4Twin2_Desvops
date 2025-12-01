@@ -2,8 +2,8 @@ pipeline {
     agent {
         docker {
             image 'maven:3.9.9-eclipse-temurin-17'
-            label 'docker-agent'                     // fonctionne même sur Windows
-            args '-v /var/run/docker.sock:/var/run/docker.sock'  // très important !
+            // On supprime le label et on ajoute juste le socket Docker
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
         }
     }
 
